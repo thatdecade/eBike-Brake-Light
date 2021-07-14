@@ -4,8 +4,8 @@
 #include <ArduinoOTA.h>
 #include <Adafruit_NeoPixel.h>
 
-const char* ssid = "Westaby-Private";
-const char* password = "nightnightwisconsin";
+const char* ssid = "";
+const char* password = "";
 
 #define SLOW_TIMING 400
 #define FAST_TIMING 100
@@ -27,7 +27,9 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, NEOPIN);
 enum animations_e
 {
   /* order of animations list */
-  FLASHING_SLOW_RED = 0,
+  CYLON_BOUNCE = 0,
+  
+  FLASHING_SLOW_RED,
   FLASHING_FAST_RED,
   SOLID_RED,
   
@@ -253,6 +255,7 @@ void process_animation()
       case FLASHING_SLOW_RED:
       case FLASHING_FAST_RED:
       case SOLID_RED:
+      case CYLON_BOUNCE:
       case OFF:
         fill_ring(pixels.Color(255,0,0)); //red
         break;
@@ -296,6 +299,10 @@ void process_animation()
         break;
       case SOLID_GREEN:
         fill_ring(pixels.Color(0,255,0)); //red
+        break;
+
+      case CYLON_BOUNCE:
+        CylonBounce(0xff, 0, 0, 4, 10, 50);
         break;
 
       case OFF:
@@ -396,6 +403,82 @@ void fill_ring(uint32_t color)
    pixels.setPixelColor(i, color);
  }
    pixels.show();
+}
+
+
+//--------------------------------------
+//            Imported Code            |
+//--------------------------------------
+//https://www.tweaking4all.com/hardware/arduino/adruino-led-strip-effects/#LEDStripEffectCylon
+// Modified to run without delays
+
+void CylonBounce(byte red, byte green, byte blue, int EyeSize, int SpeedDelay, int ReturnDelay)
+{
+  static bool animation_direction = true;
+  static int i = 0;
+  static uint32_t last_update = 0;
+
+  if (last_update + SpeedDelay < millis())
+  {
+    last_update = millis();
+    
+    if (animation_direction)
+    {
+      setAll(0,0,0);
+      setPixel(i, red/10, green/10, blue/10);
+      for(int j = 1; j <= EyeSize; j++) {
+        setPixel(i+j, red, green, blue);
+      }
+      setPixel(i+EyeSize+1, red/10, green/10, blue/10);
+      pixels.show();
+      
+      if(i < pixels.numPixels()-EyeSize-2)
+      {
+        i++;
+      }
+      else
+      {
+        animation_direction = false;
+        i = pixels.numPixels()-EyeSize-2;
+        delay(ReturnDelay);
+      }
+    }
+    else
+    {
+      setAll(0,0,0);
+      setPixel(i, red/10, green/10, blue/10);
+      for(int j = 1; j <= EyeSize; j++) {
+        setPixel(i+j, red, green, blue);
+      }
+      setPixel(i+EyeSize+1, red/10, green/10, blue/10);
+      pixels.show();
+      
+      if(i > 0)
+      {
+        i--;
+      }
+      else
+      {
+        animation_direction = true;
+        i = 0;
+        delay(ReturnDelay);
+      }
+    }
+  }
+}
+
+void setPixel(int Pixel, byte red, byte green, byte blue) 
+{
+   pixels.setPixelColor(Pixel, pixels.Color(red, green, blue));
+}
+
+void setAll(byte red, byte green, byte blue) 
+{
+  for(int i = 0; i < pixels.numPixels(); i++ ) 
+  {
+    setPixel(i, red, green, blue);
+  }
+  pixels.show();
 }
 
 //--------------------------------------
