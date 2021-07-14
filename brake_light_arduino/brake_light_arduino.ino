@@ -123,48 +123,32 @@ void loop()
   poll_input_signals();
   process_button_presses();
   process_animation();
+  //TBD, brake should override the animation, not directly change the mode
 }
 
 void poll_brake_signal_for_brightness()
 {
-  static bool last_read = false;
-  static byte mode_save = 0;
-  bool new_read = digitalRead(BRAKE_PIN);
+  static bool last_flag = false;
+  int sensorValue = analogRead(A0);
+  float voltage = sensorValue * (3.2 / 1023.0);
 
-  if (new_read != last_read)
+  //Serial.print("Brake: ");
+  //Serial.println(voltage);
+
+  if (voltage < 0.1f) //check for active low signal (not strong enough for digital input)
   {
-    if(new_read)
-    {
-      set_high_brightness();
-      mode_save = animation_mode;
-      switch (animation_mode)
-      {
-        case FLASHING_SLOW_RED:
-        case FLASHING_FAST_RED:
-        case SOLID_RED:
-          animation_mode = SOLID_RED;
-          break;
-        case FLASHING_SLOW_GREEN:
-        case FLASHING_FAST_GREEN:
-        case SOLID_GREEN:
-          animation_mode = SOLID_GREEN;
-          break;
-        default:
-          //OFF and Secret modes, do not change anything
-          break;
-      }
-    }
-    else
-    {
-      //restore mode
-      animation_mode = mode_save;
-      set_idle_brightness();
-    }
-    
-    Serial.print("Brake: ");
-    Serial.println(new_read);
-    
-    last_read = new_read;
+    brake_flag = true;
+  }
+  else
+  {
+    brake_flag = false;
+  }
+
+  if(brake_flag != last_flag) //change brightness only on state changes
+  {
+    last_flag = brake_flag;
+    if(brake_flag) set_high_brightness();
+    else set_idle_brightness();
   }
 }
 
@@ -262,42 +246,73 @@ void secret_animation()
 
 void process_animation()
 {
-  switch (animation_mode)
+  if (brake_flag) //BRAKE !!
   {
-    case FLASHING_SLOW_RED:
-      flash_animation(SLOW_TIMING, pixels.Color(255,0,0));
-      break;
-    case FLASHING_FAST_RED:
-      flash_animation(FAST_TIMING, pixels.Color(255,0,0));
-      break;
-    case SOLID_RED:
-      fill_ring(pixels.Color(255,0,0)); //red
-      break;
-      
-    case FLASHING_SLOW_GREEN:
-      flash_animation(SLOW_TIMING, pixels.Color(0,255,0));
-      break;
-    case FLASHING_FAST_GREEN:
-      flash_animation(FAST_TIMING, pixels.Color(0,255,0));
-      break;
-    case SOLID_GREEN:
-      fill_ring(pixels.Color(0,255,0)); //red
-      break;
-  
-    case OFF:
-      fill_ring(pixels.Color(0,0,0)); //black / off
-      break;
-    case GRUNT_BDAY_PARTY:
-      rainbow(1);
-      if(wifi_connected)
-      {
-        ArduinoOTA.handle();
-      }
-      break;
-    default:
-      Serial.print("Unknown Mode: ");
-      Serial.println(animation_mode);
-      break;
+    switch (animation_mode)
+    {
+      case FLASHING_SLOW_RED:
+      case FLASHING_FAST_RED:
+      case SOLID_RED:
+      case OFF:
+        fill_ring(pixels.Color(255,0,0)); //red
+        break;
+        
+      case FLASHING_SLOW_GREEN:
+      case FLASHING_FAST_GREEN:
+      case SOLID_GREEN:
+        fill_ring(pixels.Color(0,255,0)); //red
+        break;
+    
+      case GRUNT_BDAY_PARTY:
+        rainbow(1);
+        if(wifi_connected)
+        {
+          ArduinoOTA.handle();
+        }
+        break;
+      default:
+        break;
+    }
+  }
+  else //NO BRAKE, NORMAL ANIMATION
+  {
+    switch (animation_mode)
+    {
+      case FLASHING_SLOW_RED:
+        flash_animation(SLOW_TIMING, pixels.Color(255,0,0));
+        break;
+      case FLASHING_FAST_RED:
+        flash_animation(FAST_TIMING, pixels.Color(255,0,0));
+        break;
+      case SOLID_RED:
+        fill_ring(pixels.Color(255,0,0)); //red
+        break;
+        
+      case FLASHING_SLOW_GREEN:
+        flash_animation(SLOW_TIMING, pixels.Color(0,255,0));
+        break;
+      case FLASHING_FAST_GREEN:
+        flash_animation(FAST_TIMING, pixels.Color(0,255,0));
+        break;
+      case SOLID_GREEN:
+        fill_ring(pixels.Color(0,255,0)); //red
+        break;
+
+      case OFF:
+        fill_ring(pixels.Color(0,0,0)); //black / off
+        break;
+      case GRUNT_BDAY_PARTY:
+        rainbow(1);
+        if(wifi_connected)
+        {
+          ArduinoOTA.handle();
+        }
+        break;
+      default:
+        Serial.print("Unknown Mode: ");
+        Serial.println(animation_mode);
+        break;
+    }
   }
 }
 
