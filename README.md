@@ -14,33 +14,54 @@ We are a participant in the Amazon Services LLC Associates Program, an affiliate
 * Wemos Mini dev board https://amzn.to/3xJ0e3q
 * Adafruit neopixel Ring 16 https://amzn.to/3hDBBj0
 * Pushbutton https://amzn.to/3egmDxg
-* Resistors (1K / 15K)
+* Resistors (5M / 10M) for voltage divider
 
 # Wiring:
 
-Be sure to measure the voltages from the cable harness.  These colors / voltages may not match your cable.
-
 * 4 pin cable Red Wire -> DCDC +V Input
 * 4 pin cable Black Wire -> DCDC GND Input
-
-* 4 pin cable Blue Wire -> +52V Voltage Divider
-* 4 pin cable Green Wire -> GND Voltage Divider
+* 4 pin cable Green Wire -> +4.8V Voltage Divider
+* 4 pin cable Blue Wire -> NO CONNECTION
 
 * Wemos Pin 5V -> DCDC +V Output -> Neopixel V+
 * Wemos Pin GND -> DCDC GND Output -> Neopixel GND -> Button GND
 
 * Wemos Pin D3 -> Button
-* Wemos Pin D6 -> 3.2V Brake Signal
+* Wemos Pin A0 -> 3.2V Brake Signal
 * Wemos Pin D5 -> Neopixel Data In
 
-# Voltage Divider:
+# Cable Harness Wiring Notes:
 
-Same as the light voltage, the Brake signal is also 52V.  To use as an input signal, we just have to divide it over two resistors.
+The motor controller's 4 pin wire harness has two +52V and two grounds.  The voltages from the red and green wires are not meant to be combined, they do not have a common ground.  The red/black wire is supposed to power your 52V running lights, and the green/blue wire is supposed to power your 52V brake light.  I want all these signals running to a single circuit.
+
+Here are some of the voltages I measured:
+
+|Wire Pair|Lights Off|Lights On|Brake|Notes|
+| --- | --- |  --- |  --- |  --- | 
+|Red / Black| 0| 52| 52| Correct ground|
+|Green / Black| 4.8| 0| 4.8|Wrong ground|
+|Blue / Black| 52| 52| 52|Wrong ground|
+|Green / Blue| 0| 52| 0|Correct ground|
+|Red / Blue| 52| 1.42| 1.55|Wrong ground|
+|Red / Green| 4.8| 52| 52|Wrong ground|
+
+**Correct ground**: These wires can sink current.
+**Wrong ground**: Voltage drops to 0V if used for more than a few microamps.
+
+There are a couple of ways to solve this.  
+1. An optical isolator would be best.  Allowing the green/blue 52V brake signal to light up an LED, which then triggers a phototransistor to send a signal to our second 52V circuit.
+2. Less good would be to try an read one circuit from the other using resistors and mixing the grounds.
+
+I went with the second method.  The resistors are in the megaohm range, so less than 1uA is drawn from the green wires. The voltage does not drop and I can read it with an analog input set to detect a 0.2V threshold.
 
 ```
-+52V Input ------/\/\15k/\/\---x---/\/\1k/\/\------GND
+
+Green +4.8V ------- /\/\5M/\/\-+
                                |
+                               +------ 3.2V to A0
                                |
-                               |
-                               3.25V Output
+Black GND   ------ /\/\10M/\/\-+
+
 ```
+
+The wemos A0 pin has an additional voltage divider so the resulting signal is below 1V.  Measured 0.4V (idle) / 0.01V (brake)
