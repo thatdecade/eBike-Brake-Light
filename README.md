@@ -5,6 +5,8 @@ This is a brake light I made for my RadPower ebike.  Connects to the 4 pin wire 
 
 The mount was modeled to replace my old Meilan light (https://amzn.to/3edWSh7) and re-use the same attachment bolt.  The openscad file is included, so you can change the mount to fit your project.
 
+![alt text](https://media4.giphy.com/media/5sMBCwhOdvm9IbYvTt/giphy.gif?cid=6c09b952261317ecaab570254baa62f059eea7e085dbe4c9&rid=giphy.gif)
+
 We are a participant in the Amazon Services LLC Associates Program, an affiliate advertising program designed to provide a means for us to earn fees by linking to Amazon.com and affiliated sites.
 
 # Part List:
